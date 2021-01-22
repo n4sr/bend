@@ -46,7 +46,7 @@ def blast(b, magnitude):
         raise TypeError()
     head, tail = split_marker(b)
     tail = [x for x in tail]
-    n = int(magnitude / 100000 * len(tail))+1
+    n = int(magnitude / 100000 * len(tail))
     for _ in range(n):
         i = random.randrange(len(tail))
         tail[i] = random.randrange(0xff)
