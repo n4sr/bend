@@ -1,4 +1,5 @@
 import argparse
+import imghdr
 import pathlib
 import random
 
@@ -12,41 +13,47 @@ def main():
     parser.add_argument('-m', type=int, default=1, dest='magnitude')
     args = parser.parse_args()
 
+    if imghdr.what(args.infile) != 'jpeg':
+        raise Exception('infile is not jpeg.')
+
     with open(args.infile, 'rb') as f:
         img = f.read()
 
-    data = split_jpg(img)
+    chunks = split_jpg(img)
 
-    for n, x in enumerate(data):
-        if not marker_type(x) == 'SOS':
+    for i, chunk in enumerate(chunks):
+        if not marker_type(chunk) == 'SOS':
             continue
-        data[n] = blast(x, args.magnitude)
+        chunks[i] = blast(chunk, args.magnitude)
 
-    bent_img = b''.join(data)
+    bent_img = b''.join(chunks)
 
     with open(args.outfile, 'wb') as f:
         f.write(bent_img)
 
 
-def split_jpg(b):
-    if not isinstance(b, bytes):
-        raise TypeError()
+def split_jpg(img):
+    if not isinstance(img, bytes):
+        raise TypeError(f'expected bytes, got {type(img).__name__}.')
     result = []
     last_marker = 0
-    for i in range(2, len(b)-1):
-        if b[i] == 0xff and b[i+1] != 0x00:
-            result.append(b[last_marker:i])
+    for i in range(2, len(img)-1):
+        if img[i] == 0xff and img[i+1] != 0x00:
+            result.append(img[last_marker:i])
             last_marker = i
     return result
 
 
-def blast(b, magnitude):
+def blast(chunk, magnitude):
     '''randomizes a portion of bytes.'''
-    if not isinstance(b, bytes):
-        raise TypeError()
-    head, tail = split_marker(b)
+    MAX = 20
+    if not isinstance(chunk, bytes):
+        raise TypeError(f'expected bytes, got {type(chunk).__name__}.')
+    if not 1 <= magnitude <= MAX:
+        raise ValueError(f'magnitude must be between 1 and {MAX}.')
+    head, tail = split_marker(chunk)
     tail = [x for x in tail]
-    n = int(magnitude / 100000 * len(tail))
+    n = int(2 ** (magnitude - MAX) * len(tail))
     for _ in range(n):
         i = random.randrange(len(tail))
         tail[i] = random.randrange(0xff)
@@ -55,38 +62,38 @@ def blast(b, magnitude):
     return head + tail
 
 
-def marker_length(b):
+def marker_length(chunk):
     '''returns the marker's self defined length.'''
-    if not isinstance(b, bytes):
+    if not isinstance(chunk, bytes):
         raise TypeError()
-    if marker_type(b) in ('SOI', 'EOI'):
+    if marker_type(chunk) in ('SOI', 'EOI'):
         return 2
-    return int.from_bytes(b[2:4], 'big')
+    return int.from_bytes(chunk[2:4], 'big')
 
 
 def remove_markers(obj):
-    r'''remove markers by finding all `FF` bytes and replacing the following 
+    r'''remove markers by finding all `FF` bytes and replacing the following
         byte with `00`.'''
     if isinstance(obj, bytes):
         obj = [x for x in obj]
     if not isinstance(obj, list):
-        raise TypeError()
+        raise TypeError(f'expects bytes or list, got {type(obj).__name__}')
     for i in range(len(obj)-1):
-        if obj[i] == 0xff and obj[i+1] != 0x00:
+        if obj[i] == 0xff:
             obj[i+1] = 0x00
     return bytes(obj)
 
 
-def split_marker(b):
-    i = marker_length(b)
-    return b[:i], b[i:]
+def split_marker(chunk):
+    i = marker_length(chunk)
+    return chunk[:i], chunk[i:]
 
 
-def marker_type(b):
+def marker_type(chunk):
     '''takes bytes, returns marker type.'''
     # https://en.wikipedia.org/wiki/JPEG#Syntax_and_structure
-    if not isinstance(b, bytes):
-        raise TypeError()
+    if not isinstance(chunk, bytes):
+        raise TypeError(f'expected bytes, got {type(chunk).__name__}.')
     return {
         b'\xff\xd8': 'SOI',  # start of image
         b'\xff\xc0': 'SOF0',  # start of frame (baseline DCT)
@@ -121,7 +128,7 @@ def marker_type(b):
         b'\xff\xef': 'APP15',
         b'\xff\xfe': 'COM',  # comment (text)
         b'\xff\xd9': 'EOI',  # end of image
-    }.get(b[:2], None)
+    }.get(chunk[:2], None)
 
 
 if __name__ == '__main__':
