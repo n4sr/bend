@@ -9,7 +9,7 @@ from .version import VERSION
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('infile', type=pathlib.Path)
-    parser.add_argument('outfile', type=pathlib.Path, default='output.jpg')
+    parser.add_argument('outfile', type=pathlib.Path)
     parser.add_argument('-m', type=int, default=1, dest='magnitude')
     args = parser.parse_args()
 
