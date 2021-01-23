@@ -22,9 +22,8 @@ def main():
     chunks = split_jpg(img)
 
     for i, chunk in enumerate(chunks):
-        if not marker_type(chunk) == 'SOS':
-            continue
-        chunks[i] = blast(chunk, args.magnitude)
+        if marker_type(chunk) == 'SOS':
+            chunks[i] = blast(chunk, args.magnitude)
 
     bent_img = b''.join(chunks)
 
@@ -65,7 +64,7 @@ def blast(chunk, magnitude):
 def marker_length(chunk):
     '''returns the marker's self defined length.'''
     if not isinstance(chunk, bytes):
-        raise TypeError()
+        raise TypeError(f'expected bytes, got {type(chunk).__name__}.')
     if marker_type(chunk) in ('SOI', 'EOI'):
         return 2
     return int.from_bytes(chunk[2:4], 'big')
