@@ -46,7 +46,7 @@ def split_jpg(img):
 
 def blast(chunk, magnitude):
     '''randomizes a portion of bytes.'''
-    MAX = 20
+    MAX = 16
     if not isinstance(chunk, bytes):
         raise TypeError(f'expected bytes, got {type(chunk).__name__}.')
     if not 1 <= magnitude <= MAX:
