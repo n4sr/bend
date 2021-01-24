@@ -65,8 +65,10 @@ def marker_length(chunk):
     '''returns the marker's self defined length.'''
     if not isinstance(chunk, bytes):
         raise TypeError(f'expected bytes, got {type(chunk).__name__}.')
-    if marker_type(chunk) in ('SOI', 'EOI'):
+    if marker_type(chunk) in ('SOI', 'EOI', 'RST'):
         return 2
+    if marker_type(chunk) == 'DRI':
+        return 6
     return int.from_bytes(chunk[2:4], 'big')
 
 
