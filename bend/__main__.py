@@ -43,16 +43,16 @@ def split_jpg(img):
     return result
 
 
-def blast(chunk, magnitude):
+def blast(chunk, n):
     '''randomizes a portion of bytes.'''
     MAX = 16
     if not isinstance(chunk, bytes):
         raise TypeError(f'expected bytes, got {type(chunk).__name__}.')
-    if not 1 <= magnitude <= MAX:
-        raise ValueError(f'magnitude must be between 1 and {MAX}.')
+    if not 0 <= n <= MAX:
+        raise ValueError(f'n must be between 1 and {MAX}.')
     head, tail = split_marker(chunk)
     tail = [x for x in tail]
-    n = int(2 ** (magnitude - MAX) * len(tail))
+    n = int(len(tail) / 2**(MAX - n))
     for _ in range(n):
         i = random.randrange(len(tail))
         tail[i] = random.randrange(0xff)
